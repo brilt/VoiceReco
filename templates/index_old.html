@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <button id="recordButton" onclick="changeTextColor()">
+      Start Recording
+    </button>
+    <button id="stopButton" disabled>Stop Recording</button>
+    <button id="predict" onclick="prediction()">Start prediction</button>
+    <ul id="result">
+      <li id="0">Gustavo</li>
+      <li id="1">Killian</li>
+      <li id="2">Gauthier</li>
+      <li id="3">...</li>
+      <li id="4">...</li>
+    </ul>
+    <script>
+      // Global variables
+      let mediaRecorder;
+      let recordedChunks = [];
+      let audioBlob;
+
+      // Get the required elements
+      const recordButton = document.getElementById("recordButton");
+      const stopButton = document.getElementById("stopButton");
+      function changeTextColor() {
+        const result = document.getElementById("result");
+        const lis = result.getElementsByTagName("li");
+
+        for (let i = 0; i < lis.length; i++) {
+          lis[i].style.color = "black";
+        }
+      }
+
+      // Handle the start recording button click event
+      recordButton.addEventListener("click", () => {
+        // Request access to the microphone
+        navigator.mediaDevices
+          .getUserMedia({ audio: true })
+          .then((stream) => {
+            // Create a new MediaRecorder instance
+            mediaRecorder = new MediaRecorder(stream, {
+              mimeType: "audio/webm",
+            });
+
+            // Add event listeners for MediaRecorder events
+            mediaRecorder.addEventListener(
+              "dataavailable",
+              handleDataAvailable
+            );
+            mediaRecorder.addEventListener("stop", handleStop);
+
+            // Start recording when the MediaRecorder is ready
+            mediaRecorder.start();
+
+            // Update button states
+            recordButton.disabled = true;
+            stopButton.disabled = false;
+          })
+          .catch((error) => {
+            console.error("Error accessing microphone:", error);
+          });
+      });
+
+      // Handle the stop recording button click event
+      stopButton.addEventListener("click", (event) => {
+        // Stop the MediaRecorder
+        event.preventDefault(); // Prevent form submission
+        mediaRecorder.stop();
+
+        // Update button states
+        recordButton.disabled = false;
+        stopButton.disabled = true;
+      });
+
+      // Handle data available event for the MediaRecorder
+      function handleDataAvailable(event) {
+        recordedChunks.push(event.data);
+      }
+
+      // Handle stop event for the MediaRecorder
+      function handleStop() {
+        // Create a new Blob from the recorded chunks
+        audioBlob = new Blob(recordedChunks, { type: "audio/webm" });
+
+        // Reset recorded chunks
+        recordedChunks = [];
+
+        // Send the audio file to the server
+        sendAudioFile();
+      }
+
+      // Send the audio file to the server using Fetch API
+      function sendAudioFile() {
+        const formData = new FormData();
+        formData.append("audio", audioBlob, "record.webm");
+
+        fetch("http://127.0.0.1:5000/save_audio", {
+          method: "POST",
+          body: formData,
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            // Handle the JSON data
+            console.log(data); // or do something else with the data
+
+            // Change color based on JSON key
+            const result = document.getElementById("result");
+            const firstKey = Object.keys(data)[0]; // Get the first key
+            const firstValue = data[firstKey]; // Get the value associated with the first key
+
+            const liElementKey = document.getElementById(firstKey);
+            const liElementValue = document.getElementById(firstValue);
+
+            liElementValue.style.color = "green";
+          })
+          .catch((error) => {
+            console.error("Error predicting:", error);
+          });
+      }
+
+      function prediction() {
+        fetch("http://127.0.0.1:5000/predict", {
+          method: "POST",
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            // Handle the JSON data
+            console.log(data); // or do something else with the data
+
+            // Change color based on JSON key
+            const result = document.getElementById("result");
+            const firstKey = Object.keys(data)[0]; // Get the first key
+            const firstValue = data[firstKey]; // Get the value associated with the first key
+
+            const liElementKey = document.getElementById(firstKey);
+            const liElementValue = document.getElementById(firstValue);
+            console.log("key: " + firstKey + "value " + firstValue);
+            console.log(firstKey == firstValue);
+            if (liElementValue) {
+              liElementValue.style.color =
+                firstKey == firstValue ? "green" : "red";
+            }
+          })
+          .catch((error) => {
+            console.error("Error predicting:", error);
+          });
+      }
+    </script>
+  </body>
+</html>
