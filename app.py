@@ -23,8 +23,7 @@ SHUFFLE_SEED = 43
 BATCH_SIZE = 128
 SCALE = 0.5
 SAMPLING_RATE = 16000
-DATASET_ROOT = "A:\\AI\\Reconnaissancee Voix\\justone"
-
+DATASET_ROOT = "A:\\autre\\GitHub\\VoiceReco\\justone"
 # The folders in which we will put the audio samples and the noise samples
 AUDIO_SUBFOLDER = "audio"
 NOISE_SUBFOLDER = "noise"
@@ -77,6 +76,7 @@ def predict():
             for filepath in os.listdir(dir_path)
             if filepath.endswith(".wav")
         ]
+        print("SPEAKER SAMPLE PATH"+str(speaker_sample_paths))
         audio_paths += speaker_sample_paths
         labels += [label] * len(speaker_sample_paths)
         
@@ -104,14 +104,7 @@ def predict():
         y_pred = np.argmax(y_pred, axis=-1)[rnd]
 
 
-        print(
-                "Speaker:\33{} {}\33[0m\tPredicted:\33{} {}\33[0m".format(
-                    "[92m" if labels[0] == y_pred[0] else "[91m",
-                    class_names[labels[0]],
-                    "[92m" if labels[0] == y_pred[0] else "[91m",
-                    class_names[y_pred[0]],
-                )
-            )
+        
         predictions = {int(labels[0]): int(y_pred[0])}
 
         
@@ -186,12 +179,15 @@ def add_noise(audio, noises=None, scale=0.5):
 def save_audio():
     audio = request.files['audio']
     print("Received file content type:", audio.content_type)
-    audio.save('A:\\AI\\Reconnaissancee Voix\\record.webm')  
-    input_file = r"A:\\AI\\Reconnaissancee Voix\\record.webm"
-    output_file = r"A:\\AI\\Reconnaissancee Voix\\record.wav"
-    command = ['ffmpeg','-y', '-i', input_file, output_file]
+    save_path = r"A:\\autre\\GitHub\\VoiceReco\\justone\\audio\\Killian Boisseau\\record.webm"
+    audio.save(save_path)
+
+    input_file = save_path
+    output_file = r"A:\\autre\\GitHub\\VoiceReco\\justone\\audio\\Killian Boisseau\\record.wav"
+    command = ['ffmpeg', '-y', '-i', input_file, output_file]
     subprocess.run(command, shell=True)
     os.remove(input_file)
+
     prediction = predict()
     return prediction
 
